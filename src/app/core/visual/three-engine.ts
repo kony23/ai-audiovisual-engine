@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import * as THREE from 'three';
+import { ShaderProgram } from './shader-program.model';
+import { AudioEngineService } from '../audio/audio-engine';
 
 const vertexShader = `
 void main() {
@@ -40,60 +42,75 @@ void main() {
 })
 export class ThreeEngineService {
 
+  private readonly audio = inject(AudioEngineService);
+
   private scene!: THREE.Scene;
-  private camera!: THREE.PerspectiveCamera;
+  private camera!: THREE.OrthographicCamera;
   private renderer!: THREE.WebGLRenderer;
   private material!: THREE.ShaderMaterial;
-  private clock = new THREE.Clock();
-  private animationFrameId: number | null = null;
-  private geometry: THREE.PlaneGeometry | null = null;
+  private mesh!: THREE.Mesh;
 
-  init(canvas: HTMLCanvasElement) {
+  private readonly clock = new THREE.Clock();
+
+  init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
     this.scene = new THREE.Scene();
 
-    this.camera = new THREE.PerspectiveCamera(
-      75,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      100
-    );
-    this.camera.position.z = 2;
+    // ✅ FULLSCREEN ORTHO CAMERA
+    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    this.renderer = new THREE.WebGLRenderer({ canvas });
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    // ✅ RENDERER SIZE = CANVAS SIZE
+    this.renderer = new THREE.WebGLRenderer({
+      canvas,
+      powerPreference: 'high-performance'
+    });
+
+    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setSize(
+      canvas.clientWidth,
+      canvas.clientHeight,
+      false
+    );
 
     const geometry = new THREE.PlaneGeometry(2, 2);
 
     this.material = new THREE.ShaderMaterial({
-      vertexShader: vertexShader,
-      fragmentShader: fragmentShader,
-      uniforms: {
-        uTime: { value: 0 },
-        uResolution: {
-          value: new THREE.Vector2(
-            window.innerWidth,
-            window.innerHeight
-          )
-        }
-      }
+      vertexShader: program.vertex,
+      fragmentShader: program.fragment,
+      uniforms: program.uniforms
     });
 
-    const mesh = new THREE.Mesh(geometry, this.material);
-    this.scene.add(mesh);
+    this.mesh = new THREE.Mesh(geometry, this.material);
+    this.scene.add(this.mesh);
+
+    // ✅ INITIAL RESOLUTION
+    this.material.uniforms['uResolution'].value.set(
+      canvas.clientWidth,
+      canvas.clientHeight
+    );
+
+    // ✅ HANDLE RESIZE
+    window.addEventListener('resize', () => {
+      this.renderer.setSize(
+        canvas.clientWidth,
+        canvas.clientHeight,
+        false
+      );
+
+      this.material.uniforms['uResolution'].value.set(
+        canvas.clientWidth,
+        canvas.clientHeight
+      );
+    });
   }
 
-  animate = () => {
+  animate = (): void => {
     requestAnimationFrame(this.animate);
-    this.material.uniforms['uTime'].value = this.clock.getElapsedTime();
+
+    this.audio.update();
+
+    this.material.uniforms['uTime'].value =
+      this.clock.getElapsedTime();
+
     this.renderer.render(this.scene, this.camera);
   };
-
-  dispose() {
-    if (this.animationFrameId !== null) {
-      cancelAnimationFrame(this.animationFrameId);
-    }
-    this.geometry?.dispose();
-    this.material?.dispose();
-    this.renderer?.dispose();
-  }
 }
