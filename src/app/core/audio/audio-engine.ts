@@ -15,6 +15,7 @@ export class AudioEngineService {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private source: AudioNode | null = null;
+  private mediaElement: HTMLAudioElement | null = null;
 
   private readonly fftSize = 1024;
   private readonly frequencyData = new Uint8Array(this.fftSize / 2);
@@ -58,15 +59,32 @@ export class AudioEngineService {
   }
 
   // --- init from <audio> element ---
-  initFromAudioElement(element: HTMLAudioElement): void {
-    this.audioContext = new AudioContext();
-    this.source = this.audioContext.createMediaElementSource(element);
+  async initFromAudioElement(element: HTMLAudioElement): Promise<void> {
+    try {
+      if (!this.audioContext) {
+        this.audioContext = new AudioContext();
+      }
 
-    this.setupAnalyser();
-    this.source.connect(this.analyser!);
-    this.analyser!.connect(this.audioContext.destination);
+      if (this.mediaElement !== element) {
+        this.source?.disconnect();
+        this.analyser?.disconnect();
 
-    this.status.set('running');
+        this.source = this.audioContext.createMediaElementSource(element);
+        this.mediaElement = element;
+
+        this.setupAnalyser();
+        this.source.connect(this.analyser!);
+        this.analyser!.connect(this.audioContext.destination);
+      }
+
+      if (this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+      }
+
+      this.status.set('running');
+    } catch {
+      this.status.set('error');
+    }
   }
 
   // --- main update loop (called from render loop) ---

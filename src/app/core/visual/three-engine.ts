@@ -1,41 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import * as THREE from 'three';
-import { ShaderProgram } from './shader-program.model';
 import { AudioEngineService } from '../audio/audio-engine';
-
-const vertexShader = `
-void main() {
-  gl_Position = projectionMatrix *
-                modelViewMatrix *
-                vec4(position, 1.0);
-}
-`;
-
-const fragmentShader = `
-precision highp float;
-
-uniform float uTime;
-uniform vec2 uResolution;
-
-vec3 palette(float t) {
-  vec3 a = vec3(0.5, 0.5, 0.5);
-  vec3 b = vec3(0.5, 0.5, 0.5);
-  vec3 c = vec3(1.0, 0.2, 0.4);
-  vec3 d = vec3(0.0, 0.1, 0.2);
-  return a + b * cos(6.28318 * (c * t + d));
-}
-
-void main() {
-  vec2 uv = (gl_FragCoord.xy * 2.0 - uResolution) / uResolution.y;
-  float t = uTime * 0.2;
-
-  float d = length(uv);
-  float wave = sin(d * 10.0 - t * 4.0);
-
-  vec3 color = palette(d + t) * wave;
-  gl_FragColor = vec4(color, 1.0);
-}
-`;
+import { ShaderProgram } from './shader-program.model';
 
 @Injectable({
   providedIn: 'root'
@@ -55,10 +21,10 @@ export class ThreeEngineService {
   init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
     this.scene = new THREE.Scene();
 
-    // ✅ FULLSCREEN ORTHO CAMERA
+    // Fullscreen ortho camera.
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
-    // ✅ RENDERER SIZE = CANVAS SIZE
+    // Renderer size = canvas size.
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       powerPreference: 'high-performance'
@@ -82,13 +48,13 @@ export class ThreeEngineService {
     this.mesh = new THREE.Mesh(geometry, this.material);
     this.scene.add(this.mesh);
 
-    // ✅ INITIAL RESOLUTION
+    // Initial resolution.
     this.material.uniforms['uResolution'].value.set(
       canvas.clientWidth,
       canvas.clientHeight
     );
 
-    // ✅ HANDLE RESIZE
+    // Handle resize.
     window.addEventListener('resize', () => {
       this.renderer.setSize(
         canvas.clientWidth,
@@ -108,8 +74,32 @@ export class ThreeEngineService {
 
     this.audio.update();
 
-    this.material.uniforms['uTime'].value =
-      this.clock.getElapsedTime();
+    const elapsedTime = this.clock.getElapsedTime();
+    const uniforms = this.material.uniforms;
+
+    if (uniforms['uTime']) {
+      uniforms['uTime'].value = elapsedTime;
+    }
+
+    if (uniforms['uEnergy']) {
+      uniforms['uEnergy'].value = this.audio.energy();
+    }
+
+    if (uniforms['uBass']) {
+      uniforms['uBass'].value = this.audio.bass();
+    }
+
+    if (uniforms['uMid']) {
+      uniforms['uMid'].value = this.audio.mid();
+    }
+
+    if (uniforms['uTreble']) {
+      uniforms['uTreble'].value = this.audio.treble();
+    }
+
+    if (uniforms['uRms']) {
+      uniforms['uRms'].value = this.audio.rms();
+    }
 
     this.renderer.render(this.scene, this.camera);
   };

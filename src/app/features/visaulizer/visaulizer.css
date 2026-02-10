@@ -1,0 +1,101 @@
+.visualizer {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: radial-gradient(circle at 20% 20%, #181a33, #05060d 70%);
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.panel {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  display: grid;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  width: min(28rem, calc(100vw - 3rem));
+  background: rgba(8, 10, 20, 0.75);
+  color: #f7f2ff;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+}
+
+.row {
+  display: grid;
+  gap: 0.5rem;
+}
+
+label {
+  font-size: 0.85rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.75);
+}
+
+input[type='file'],
+input[type='url'] {
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+}
+
+input[type='file']::file-selector-button {
+  margin-right: 0.75rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: none;
+  background: #f99bd6;
+  color: #1b0d1f;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button {
+  align-self: start;
+  padding: 0.55rem 1rem;
+  border-radius: 999px;
+  border: none;
+  background: #6cc9ff;
+  color: #08111a;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid #f9f871;
+  outline-offset: 2px;
+}
+
+.status {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.track {
+  margin: 0;
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.85);
+  word-break: break-word;
+}
+
+audio {
+  display: none;
+}
+
+@media (max-width: 720px) {
+  .panel {
+    left: 1rem;
+    right: 1rem;
+    width: auto;
+  }
+}

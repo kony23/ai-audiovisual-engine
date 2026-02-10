@@ -1,1 +1,45 @@
+<div class="visualizer">
+  <canvas #canvas aria-label="Audio visualizer"></canvas>
 
+  <section class="panel" aria-label="Audio controls">
+    <div class="row">
+      <label for="track-file">Local track</label>
+      <input
+        id="track-file"
+        type="file"
+        accept="audio/*"
+        (change)="onFileSelected($event)"
+      />
+    </div>
+
+    <div class="row">
+      <label for="track-url">Stream URL</label>
+      <input
+        id="track-url"
+        type="url"
+        placeholder="https://example.com/track.mp3"
+        [formControl]="urlControl"
+      />
+      <button type="button" (click)="onLoadUrl()">Load</button>
+    </div>
+
+    <div class="row">
+      <button type="button" (click)="onTogglePlayback()">
+        {{ isPlaying() ? 'Pause' : 'Play' }}
+      </button>
+      <span class="status">{{ statusLabel() }}</span>
+    </div>
+
+    @if (selectedTrackName()) {
+      <p class="track">Now playing: {{ selectedTrackName() }}</p>
+    }
+
+    <audio
+      #audio
+      crossorigin="anonymous"
+      preload="metadata"
+      (play)="onAudioPlay()"
+      (pause)="onAudioPause()"
+    ></audio>
+  </section>
+</div>
