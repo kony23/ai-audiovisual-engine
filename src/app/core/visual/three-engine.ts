@@ -10,6 +10,7 @@ export class ThreeEngineService {
 
   private readonly audio = inject(AudioEngineService);
 
+  private canvas!: HTMLCanvasElement;
   private scene!: THREE.Scene;
   private camera!: THREE.OrthographicCamera;
   private renderer!: THREE.WebGLRenderer;
@@ -19,6 +20,7 @@ export class ThreeEngineService {
   private readonly clock = new THREE.Clock();
 
   init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
+    this.canvas = canvas;
     this.scene = new THREE.Scene();
 
     // Fullscreen ortho camera.
@@ -67,6 +69,28 @@ export class ThreeEngineService {
         canvas.clientHeight
       );
     });
+  }
+
+  setProgram(program: ShaderProgram): void {
+    const nextMaterial = new THREE.ShaderMaterial({
+      vertexShader: program.vertex,
+      fragmentShader: program.fragment,
+      uniforms: program.uniforms
+    });
+
+    if (this.material) {
+      this.material.dispose();
+    }
+
+    this.material = nextMaterial;
+    this.mesh.material = nextMaterial;
+
+    if (this.canvas && this.material.uniforms['uResolution']) {
+      this.material.uniforms['uResolution'].value.set(
+        this.canvas.clientWidth,
+        this.canvas.clientHeight
+      );
+    }
   }
 
   animate = (): void => {
