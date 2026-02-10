@@ -18,6 +18,8 @@ export class ThreeEngineService {
   private mesh!: THREE.Mesh;
 
   private readonly clock = new THREE.Clock();
+  private time = 0;
+  private isPlaybackActive = false;
 
   init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
     this.canvas = canvas;
@@ -93,16 +95,23 @@ export class ThreeEngineService {
     }
   }
 
+  setPlaybackActive(active: boolean): void {
+    this.isPlaybackActive = active;
+  }
+
   animate = (): void => {
     requestAnimationFrame(this.animate);
 
     this.audio.update();
 
-    const elapsedTime = this.clock.getElapsedTime();
+    const delta = this.clock.getDelta();
+    if (this.isPlaybackActive) {
+      this.time += delta;
+    }
     const uniforms = this.material.uniforms;
 
     if (uniforms['uTime']) {
-      uniforms['uTime'].value = elapsedTime;
+      uniforms['uTime'].value = this.time;
     }
 
     if (uniforms['uEnergy']) {

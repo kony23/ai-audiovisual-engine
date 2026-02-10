@@ -68,6 +68,11 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       label: 'Ion Bloom',
       fragmentPath: '/shaders/fragment-ion.glsl',
     },
+    {
+      id: 'new',
+      label: 'New',
+      fragmentPath: '/shaders/new.glsl',
+    },
   ];
 
   async ngAfterViewInit(): Promise<void> {
@@ -132,6 +137,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     if (!audio?.src) return;
     audio.pause();
     audio.currentTime = 0;
+    this.three.setPlaybackActive(false);
   }
 
   async onSelectPreset(presetId: string): Promise<void> {
@@ -152,10 +158,12 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
 
   onAudioPlay(): void {
     this.isPlaying.set(true);
+    this.three.setPlaybackActive(true);
   }
 
   onAudioPause(): void {
     this.isPlaying.set(false);
+    this.three.setPlaybackActive(false);
   }
 
   private async setAudioSource(source: string): Promise<void> {
