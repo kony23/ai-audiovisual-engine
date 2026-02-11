@@ -73,6 +73,21 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       label: 'New',
       fragmentPath: '/shaders/new.glsl',
     },
+    {
+      id: 'gpt-free',
+      label: 'Gpt-free',
+      fragmentPath: '/shaders/gpt-free.glsl',
+    },
+    {
+      id: 'gpt-free-soft',
+      label: 'Gpt-free Soft',
+      fragmentPath: '/shaders/gpt-free-soft.glsl',
+    },
+    {
+      id: 'smooth',
+      label: 'Smooth',
+      fragmentPath: '/shaders/smooth.glsl',
+    },
   ];
 
   async ngAfterViewInit(): Promise<void> {
@@ -199,9 +214,16 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
         uResolution: { value: new THREE.Vector2(1, 1) },
         uEnergy: { value: 0 },
         uBass: { value: 0 },
+        uLowMid: { value: 0 },
         uMid: { value: 0 },
+        uPresence: { value: 0 },
         uTreble: { value: 0 },
+        uHigh: { value: 0 },
         uRms: { value: 0 },
+        uCentroid: { value: 0 },
+        uFlux: { value: 0 },
+        uZcr: { value: 0 },
+        uCrest: { value: 0 },
       },
     };
   }

@@ -122,16 +122,44 @@ export class ThreeEngineService {
       uniforms['uBass'].value = this.audio.bass();
     }
 
+    if (uniforms['uLowMid']) {
+      uniforms['uLowMid'].value = this.audio.lowMid();
+    }
+
     if (uniforms['uMid']) {
       uniforms['uMid'].value = this.audio.mid();
+    }
+
+    if (uniforms['uPresence']) {
+      uniforms['uPresence'].value = this.audio.presence();
     }
 
     if (uniforms['uTreble']) {
       uniforms['uTreble'].value = this.audio.treble();
     }
 
+    if (uniforms['uHigh']) {
+      uniforms['uHigh'].value = this.audio.treble();
+    }
+
     if (uniforms['uRms']) {
       uniforms['uRms'].value = this.audio.rms();
+    }
+
+    if (uniforms['uCentroid']) {
+      uniforms['uCentroid'].value = this.audio.spectralCentroid();
+    }
+
+    if (uniforms['uFlux']) {
+      uniforms['uFlux'].value = this.audio.spectralFlux();
+    }
+
+    if (uniforms['uZcr']) {
+      uniforms['uZcr'].value = this.audio.zcr();
+    }
+
+    if (uniforms['uCrest']) {
+      uniforms['uCrest'].value = this.audio.crest();
     }
 
     this.renderer.render(this.scene, this.camera);

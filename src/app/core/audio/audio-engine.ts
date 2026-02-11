@@ -1,13 +1,7 @@
 import { Injectable, signal, computed } from '@angular/core';
+import { AudioMetrics } from './audio-metrics.model';
 
 type AudioStatus = 'idle' | 'running' | 'error';
-
-interface AudioMetrics {
-  rms: number;        // ogólna głośność
-  bass: number;       // niskie częstotliwości
-  mid: number;
-  treble: number;
-}
 
 @Injectable({ providedIn: 'root' })
 export class AudioEngineService {
@@ -20,6 +14,8 @@ export class AudioEngineService {
   private readonly fftSize = 1024;
   private readonly frequencyData = new Uint8Array(this.fftSize / 2);
   private readonly timeData = new Uint8Array(this.fftSize);
+  private readonly previousSpectrum = new Float32Array(this.fftSize / 2);
+  private hasPreviousSpectrum = false;
 
   // --- state ---
   readonly status = signal<AudioStatus>('idle');
@@ -27,18 +23,30 @@ export class AudioEngineService {
   private readonly rawMetrics = signal<AudioMetrics>({
     rms: 0,
     bass: 0,
+    lowMid: 0,
     mid: 0,
+    presence: 0,
     treble: 0,
+    spectralCentroid: 0,
+    spectralFlux: 0,
+    zcr: 0,
+    crest: 0,
   });
 
   // --- public computed signals ---
   readonly rms = computed(() => this.rawMetrics().rms);
   readonly bass = computed(() => this.rawMetrics().bass);
+  readonly lowMid = computed(() => this.rawMetrics().lowMid);
   readonly mid = computed(() => this.rawMetrics().mid);
+  readonly presence = computed(() => this.rawMetrics().presence);
   readonly treble = computed(() => this.rawMetrics().treble);
+  readonly spectralCentroid = computed(() => this.rawMetrics().spectralCentroid);
+  readonly spectralFlux = computed(() => this.rawMetrics().spectralFlux);
+  readonly zcr = computed(() => this.rawMetrics().zcr);
+  readonly crest = computed(() => this.rawMetrics().crest);
 
   readonly energy = computed(() =>
-    (this.bass() * 0.5 + this.mid() * 0.3 + this.treble() * 0.2)
+    (this.bass() * 0.4 + this.mid() * 0.3 + this.presence() * 0.2 + this.treble() * 0.1)
   );
 
   // --- init from microphone ---
@@ -107,24 +115,51 @@ export class AudioEngineService {
   private calculateMetrics(): AudioMetrics {
     const freq = this.frequencyData;
 
-    const bassRange = this.average(freq, 0, 10);
-    const midRange = this.average(freq, 10, 40);
-    const trebleRange = this.average(freq, 40, freq.length);
+    const bassRange = this.averageByHz(freq, 20, 140);
+    const lowMidRange = this.averageByHz(freq, 140, 400);
+    const midRange = this.averageByHz(freq, 400, 2000);
+    const presenceRange = this.averageByHz(freq, 2000, 6000);
+    const trebleRange = this.averageByHz(freq, 6000, 16000);
 
     const rms = this.calculateRMS(this.timeData);
+    const spectralCentroid = this.calculateSpectralCentroid(freq);
+    const spectralFlux = this.calculateSpectralFlux(freq);
+    const zcr = this.calculateZeroCrossingRate(this.timeData);
+    const crest = this.calculateCrestFactor(this.timeData, rms);
 
     return {
       rms,
       bass: bassRange,
+      lowMid: lowMidRange,
       mid: midRange,
+      presence: presenceRange,
       treble: trebleRange,
+      spectralCentroid,
+      spectralFlux,
+      zcr,
+      crest,
     };
   }
 
   private average(data: Uint8Array, start: number, end: number): number {
+    if (end <= start) return 0;
+
     let sum = 0;
     for (let i = start; i < end; i++) sum += data[i];
     return (sum / (end - start)) / 255;
+  }
+
+  private averageByHz(data: Uint8Array, lowHz: number, highHz: number): number {
+    const start = this.frequencyBinForHz(lowHz);
+    const endExclusive = Math.min(data.length, this.frequencyBinForHz(highHz) + 1);
+    return this.average(data, start, endExclusive);
+  }
+
+  private frequencyBinForHz(hz: number): number {
+    const sampleRate = this.audioContext?.sampleRate ?? 44100;
+    const binHz = sampleRate / this.fftSize;
+    const bin = Math.floor(hz / binHz);
+    return Math.max(0, Math.min(this.frequencyData.length - 1, bin));
   }
 
   private calculateRMS(data: Uint8Array): number {
@@ -134,5 +169,66 @@ export class AudioEngineService {
       sum += v * v;
     }
     return Math.sqrt(sum / data.length);
+  }
+
+  private calculateSpectralCentroid(data: Uint8Array): number {
+    let weightedSum = 0;
+    let total = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      const v = data[i] / 255;
+      weightedSum += i * v;
+      total += v;
+    }
+
+    if (total <= 0.00001) return 0;
+    return (weightedSum / total) / (data.length - 1);
+  }
+
+  private calculateSpectralFlux(data: Uint8Array): number {
+    let flux = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      const current = data[i] / 255;
+      const delta = current - this.previousSpectrum[i];
+      if (delta > 0) flux += delta;
+      this.previousSpectrum[i] = current;
+    }
+
+    if (!this.hasPreviousSpectrum) {
+      this.hasPreviousSpectrum = true;
+      return 0;
+    }
+
+    return Math.min(1, flux / data.length * 6.0);
+  }
+
+  private calculateZeroCrossingRate(data: Uint8Array): number {
+    let zeroCrossings = 0;
+    let previousSign = ((data[0] - 128) >= 0) ? 1 : -1;
+
+    for (let i = 1; i < data.length; i++) {
+      const currentSign = ((data[i] - 128) >= 0) ? 1 : -1;
+      if (currentSign !== previousSign) {
+        zeroCrossings++;
+      }
+      previousSign = currentSign;
+    }
+
+    return zeroCrossings / (data.length - 1);
+  }
+
+  private calculateCrestFactor(data: Uint8Array, rms: number): number {
+    let peak = 0;
+
+    for (let i = 0; i < data.length; i++) {
+      const v = Math.abs((data[i] - 128) / 128);
+      if (v > peak) peak = v;
+    }
+
+    if (rms <= 0.00001) return 0;
+
+    const crest = peak / rms;
+    return Math.min(1, Math.max(0, (crest - 1) / 9));
   }
 }
