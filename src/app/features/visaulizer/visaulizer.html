@@ -6,6 +6,8 @@
     [generationStatus]="promptStatus()"
     [errorMessage]="promptError()"
     [disabled]="isPromptGenerating()"
+    [isLoading]="isPromptGenerating()"
+    [generatedActive]="isGeneratedShaderActive()"
     (generate)="onGeneratePrompt()"
   />
 

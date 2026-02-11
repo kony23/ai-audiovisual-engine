@@ -57,3 +57,43 @@ Angular CLI does not come with an end-to-end testing framework by default. You c
 ## Additional Resources
 
 For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+
+## Local Shader API (Ollama)
+
+The app uses `POST /api/shaders/generate` for prompt-based shader generation.
+This repo now includes a minimal local backend adapter for Ollama.
+
+1. Start Ollama and ensure your model is available, e.g.:
+
+```bash
+ollama pull qwen2.5-coder:14b
+```
+
+2. In terminal A, start the local shader API:
+
+```bash
+npm run start:api
+```
+
+3. In terminal B, start Angular UI (with `/api` proxy):
+
+```bash
+npm start
+```
+
+Default local backend settings:
+
+- `SHADER_API_HOST=127.0.0.1`
+- `SHADER_API_PORT=8787`
+- `OLLAMA_URL=http://127.0.0.1:11434/api/chat`
+- `OLLAMA_MODEL=qwen2.5-coder:14b`
+- `SHADER_REQUEST_TIMEOUT_MS=90000`
+- `SHADER_LOG_PROMPTS=false` (set `true` if you want full prompt text in API logs)
+
+### Logs
+
+- Backend request/model logs: terminal where you run `npm run start:api`
+- Angular/UI logs: browser devtools console
+- Ollama service logs:
+  - if running `ollama serve` manually: that terminal
+  - if running as a background service: system service logs

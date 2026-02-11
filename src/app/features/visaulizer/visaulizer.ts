@@ -53,6 +53,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly promptStatus = signal('Prompt idle');
   readonly isPromptGenerating = signal(false);
   readonly promptError = signal<string | null>(null);
+  readonly isGeneratedShaderActive = signal(false);
 
   readonly statusLabel = computed(() => {
     if (this.shaderLoadError()) return 'Shader load error';
@@ -174,11 +175,14 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   }
 
   async onSelectPreset(presetId: string): Promise<void> {
-    if (presetId === this.selectedPresetId()) return;
+    if (presetId === this.selectedPresetId() && !this.isGeneratedShaderActive()) return;
     this.selectedPresetId.set(presetId);
     try {
       const fragment = await this.loadPresetFragment(presetId);
       this.three.setProgram(this.buildProgram(fragment));
+      this.isGeneratedShaderActive.set(false);
+      this.promptStatus.set(`Preset applied: ${presetId}`);
+      this.promptError.set(null);
     } catch (error) {
       this.shaderLoadError.set('Failed to load shader preset');
       console.error(error);
@@ -229,11 +233,8 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       }
 
       this.three.setProgram(this.buildProgram(result.fragment));
-      this.promptStatus.set(
-        result.source === 'api'
-          ? 'Generated and applied'
-          : 'Applied (fallback generator)',
-      );
+      this.isGeneratedShaderActive.set(true);
+      this.promptStatus.set('Generated and applied');
     } catch (error) {
       if (error instanceof ShaderGenerationError) {
         this.promptStatus.set('Generation failed');
@@ -337,6 +338,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       const fragment = await this.loadPresetFragment('smooth');
       this.selectedPresetId.set('smooth');
       this.three.setProgram(this.buildProgram(fragment));
+      this.isGeneratedShaderActive.set(false);
       this.promptStatus.set('Generation failed - smooth preset applied');
     } catch (fallbackError) {
       this.promptStatus.set('Generation failed');

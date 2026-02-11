@@ -99,7 +99,8 @@ export class ShaderGenerationService {
   }
 
   // Kompilacja i linkowanie programu WebGL przed aplikacją shadera w Three.js.
-  // Pozwala wyłapać błędy GLSL wcześniej i zwrócić czytelny komunikat.
+  // Uwaga: ShaderMaterial w Three.js dostaje dodatkowe definicje/uniformy "automatycznie",
+  // więc walidacja używa prostego, niezależnego vertex shadera testowego.
   validateProgram(vertexSource: string, fragmentSource: string): readonly string[] {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl');
@@ -114,7 +115,14 @@ export class ShaderGenerationService {
       return ['Unable to allocate shader objects.'];
     }
 
-    gl.shaderSource(vertexShader, vertexSource);
+    const testVertexSource = `
+attribute vec3 position;
+void main() {
+  gl_Position = vec4(position, 1.0);
+}
+`.trim();
+
+    gl.shaderSource(vertexShader, testVertexSource);
     gl.compileShader(vertexShader);
     const vertexOk = gl.getShaderParameter(vertexShader, gl.COMPILE_STATUS);
     const vertexLog = gl.getShaderInfoLog(vertexShader) ?? '';

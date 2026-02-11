@@ -14,6 +14,10 @@
   </header>
 
   <div class="prompter__body">
+    @if (generatedActive) {
+      <p class="prompter__active" role="status">Generated shader active</p>
+    }
+
     <label for="shader-prompt">Prompt</label>
     <textarea
       id="shader-prompt"
@@ -25,7 +29,12 @@
       <p class="prompter__error" role="status">{{ errorMessage }}</p>
     }
     <button type="button" class="generate" (click)="onGenerate()" [disabled]="isGenerateDisabled()">
-      Generate
+      @if (isLoading) {
+        <span class="generate__spinner" aria-hidden="true"></span>
+        <span>Generating...</span>
+      } @else {
+        <span>Generate</span>
+      }
     </button>
   </div>
 </section>

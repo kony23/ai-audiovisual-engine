@@ -12,6 +12,8 @@ export class ShaderPrompterComponent implements OnChanges {
   @Input() generationStatus = 'Idle';
   @Input() errorMessage: string | null = null;
   @Input() disabled = false;
+  @Input() isLoading = false;
+  @Input() generatedActive = false;
   isMinimized = false;
 
   @Output() readonly generate = new EventEmitter<void>();
@@ -35,7 +37,7 @@ export class ShaderPrompterComponent implements OnChanges {
   }
 
   isGenerateDisabled(): boolean {
-    return this.disabled || !this.promptControl.value.trim();
+    return this.disabled || this.isLoading || !this.promptControl.value.trim();
   }
 
   toggleMinimized(): void {
