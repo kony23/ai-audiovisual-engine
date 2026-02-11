@@ -12,6 +12,10 @@ import {
 import { FormControl } from '@angular/forms';
 import * as THREE from 'three';
 import { AudioEngineService } from '../../core/audio/audio-engine';
+import {
+  ShaderGenerationError,
+  ShaderGenerationService,
+} from '../../core/visual/shader-generation.service';
 import { ThreeEngineService } from '../../core/visual/three-engine';
 import { ShaderProgram } from '../../core/visual/shader-program.model';
 import {
@@ -37,6 +41,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
 
   private readonly three = inject(ThreeEngineService);
   private readonly audio = inject(AudioEngineService);
+  private readonly shaderGeneration = inject(ShaderGenerationService);
 
   readonly urlControl = new FormControl('', { nonNullable: true });
   readonly isPlaying = signal(false);
@@ -47,6 +52,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly promptControl = new FormControl('', { nonNullable: true });
   readonly promptStatus = signal('Prompt idle');
   readonly isPromptGenerating = signal(false);
+  readonly promptError = signal<string | null>(null);
 
   readonly statusLabel = computed(() => {
     if (this.shaderLoadError()) return 'Shader load error';
@@ -183,20 +189,64 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     this.isControllerCollapsed.update((value) => !value);
   }
 
-  onGeneratePrompt(): void {
+  async onGeneratePrompt(): Promise<void> {
     const prompt = this.promptControl.value.trim();
     if (!prompt) {
       this.promptStatus.set('Prompt is empty');
+      this.promptError.set('Wpisz prompt przed uruchomieniem generowania.');
       return;
     }
-    this.isPromptGenerating.set(true);
-    this.promptStatus.set('Prompt captured - generation pipeline pending');
+    if (!this.vertexShaderSource) {
+      this.promptStatus.set('Shader engine unavailable');
+      this.promptError.set('Brak vertex shadera. Odswiez strone i sproboj ponownie.');
+      return;
+    }
 
-    // Placeholder for upcoming live shader generation flow.
-    setTimeout(() => {
+    this.promptError.set(null);
+    this.isPromptGenerating.set(true);
+    this.promptStatus.set('Generating shader...');
+
+    try {
+      const result = await this.shaderGeneration.generateFragment(prompt);
+      if (result.source === 'fallback') {
+        throw new ShaderGenerationError(
+          'API',
+          'Remote shader generator unavailable.',
+        );
+      }
+
+      const compileErrors = this.shaderGeneration.validateProgram(
+        this.vertexShaderSource,
+        result.fragment,
+      );
+
+      if (compileErrors.length) {
+        throw new ShaderGenerationError(
+          'COMPILATION',
+          'Generated shader failed compilation.',
+          [...compileErrors],
+        );
+      }
+
+      this.three.setProgram(this.buildProgram(result.fragment));
+      this.promptStatus.set(
+        result.source === 'api'
+          ? 'Generated and applied'
+          : 'Applied (fallback generator)',
+      );
+    } catch (error) {
+      if (error instanceof ShaderGenerationError) {
+        this.promptStatus.set('Generation failed');
+        this.promptError.set(this.mapGenerationError(error));
+      } else {
+        this.promptStatus.set('Generation failed');
+        this.promptError.set('Nieoczekiwany blad generowania shadera.');
+      }
+      await this.applySmoothPresetFallback();
+      console.error(error);
+    } finally {
       this.isPromptGenerating.set(false);
-      this.promptStatus.set('Ready to generate shader');
-    }, 350);
+    }
   }
 
   onAudioPlay(): void {
@@ -280,5 +330,34 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       throw new Error(`Shader load returned HTML (${response.url})`);
     }
     return text;
+  }
+
+  private async applySmoothPresetFallback(): Promise<void> {
+    try {
+      const fragment = await this.loadPresetFragment('smooth');
+      this.selectedPresetId.set('smooth');
+      this.three.setProgram(this.buildProgram(fragment));
+      this.promptStatus.set('Generation failed - smooth preset applied');
+    } catch (fallbackError) {
+      this.promptStatus.set('Generation failed');
+      this.promptError.set('Nie udalo sie zaladowac fallbacku smooth.');
+      console.error(fallbackError);
+    }
+  }
+
+  private mapGenerationError(error: ShaderGenerationError): string {
+    if (error.code === 'COMPILATION' && error.details.length) {
+      return `Blad kompilacji GLSL: ${error.details[0]}`;
+    }
+    if (error.code === 'API' && error.details.length) {
+      return `Blad API: ${error.details[0]}`;
+    }
+    if (error.code === 'INVALID_RESPONSE') {
+      return 'API zwrocilo nieprawidlowy shader.';
+    }
+    if (error.code === 'EMPTY_PROMPT') {
+      return 'Prompt nie moze byc pusty.';
+    }
+    return error.message;
   }
 }

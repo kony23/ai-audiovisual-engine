@@ -10,6 +10,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 export class ShaderPrompterComponent implements OnChanges {
   @Input({ required: true }) promptControl!: FormControl<string>;
   @Input() generationStatus = 'Idle';
+  @Input() errorMessage: string | null = null;
   @Input() disabled = false;
   isMinimized = false;
 
@@ -31,6 +32,10 @@ export class ShaderPrompterComponent implements OnChanges {
 
   onGenerate(): void {
     this.generate.emit();
+  }
+
+  isGenerateDisabled(): boolean {
+    return this.disabled || !this.promptControl.value.trim();
   }
 
   toggleMinimized(): void {

@@ -4,6 +4,7 @@
   <app-shader-prompter
     [promptControl]="promptControl"
     [generationStatus]="promptStatus()"
+    [errorMessage]="promptError()"
     [disabled]="isPromptGenerating()"
     (generate)="onGeneratePrompt()"
   />

@@ -21,7 +21,10 @@
       [formControl]="promptControl"
       placeholder="Describe the shader style, motion and audio reaction..."
     ></textarea>
-    <button type="button" class="generate" (click)="onGenerate()" [disabled]="disabled">
+    @if (errorMessage) {
+      <p class="prompter__error" role="status">{{ errorMessage }}</p>
+    }
+    <button type="button" class="generate" (click)="onGenerate()" [disabled]="isGenerateDisabled()">
       Generate
     </button>
   </div>
