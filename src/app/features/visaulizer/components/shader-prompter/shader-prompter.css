@@ -1,0 +1,132 @@
+.prompter {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: min(24rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  padding: 0.9rem;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f7f2ff;
+  background: linear-gradient(140deg, rgba(12, 17, 35, 0.92), rgba(14, 24, 43, 0.86));
+  box-shadow: 0 12px 32px rgba(2, 6, 14, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.prompter--minimized {
+  width: 2.5rem;
+  height: 2.5rem;
+  left: auto;
+  padding: 0;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+}
+
+.prompter__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.6rem;
+}
+
+.prompter__header h2 {
+  margin: 0;
+  font-size: 0.85rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.prompter__status {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.prompter__minimize {
+  margin-left: auto;
+  width: 1.9rem;
+  height: 1.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+
+.prompter__minimize span {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.prompter__body {
+  display: grid;
+  gap: 0.45rem;
+}
+
+label {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+textarea {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  border-radius: 0.65rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.35);
+  color: inherit;
+  font: inherit;
+  padding: 0.6rem 0.7rem;
+}
+
+.prompter--minimized .prompter__header {
+  margin: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+.prompter--minimized .prompter__minimize {
+  margin: 0;
+}
+
+.prompter--minimized .prompter__header h2,
+.prompter--minimized .prompter__status,
+.prompter--minimized .prompter__body {
+  display: none;
+}
+
+.generate {
+  justify-self: end;
+  border: none;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: linear-gradient(135deg, #7df7d7, #7bc9ff);
+  color: #071521;
+}
+
+button:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #f9f871;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  .prompter {
+    top: 0.75rem;
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}

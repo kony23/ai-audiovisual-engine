@@ -38,6 +38,12 @@ yarn-error.log
 testem.log
 /typings
 __screenshots__/
+/public/**/*.mp3
+/public/**/*.wav
+/public/**/*.ogg
+/public/**/*.flac
+/public/**/*.m4a
+/public/**/*.aac
 
 # System files
 .DS_Store

@@ -9,15 +9,20 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl } from '@angular/forms';
 import * as THREE from 'three';
 import { AudioEngineService } from '../../core/audio/audio-engine';
 import { ThreeEngineService } from '../../core/visual/three-engine';
 import { ShaderProgram } from '../../core/visual/shader-program.model';
+import {
+  AudioControllerComponent,
+  AudioControllerPreset,
+} from './components/audio-controller/audio-controller';
+import { ShaderPrompterComponent } from './components/shader-prompter/shader-prompter';
 
 @Component({
   selector: 'app-visualizer',
-  imports: [ReactiveFormsModule],
+  imports: [AudioControllerComponent, ShaderPrompterComponent],
   templateUrl: './visaulizer.html',
   styleUrl: './visaulizer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +44,9 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly shaderLoadError = signal<string | null>(null);
   readonly isControllerCollapsed = signal(false);
   readonly selectedPresetId = signal('nebula');
+  readonly promptControl = new FormControl('', { nonNullable: true });
+  readonly promptStatus = signal('Prompt idle');
+  readonly isPromptGenerating = signal(false);
 
   readonly statusLabel = computed(() => {
     if (this.shaderLoadError()) return 'Shader load error';
@@ -89,6 +97,10 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       fragmentPath: '/shaders/smooth.glsl',
     },
   ];
+  readonly presetOptions: readonly AudioControllerPreset[] = this.presets.map((preset) => ({
+    id: preset.id,
+    label: preset.label,
+  }));
 
   async ngAfterViewInit(): Promise<void> {
     try {
@@ -169,6 +181,22 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
 
   toggleController(): void {
     this.isControllerCollapsed.update((value) => !value);
+  }
+
+  onGeneratePrompt(): void {
+    const prompt = this.promptControl.value.trim();
+    if (!prompt) {
+      this.promptStatus.set('Prompt is empty');
+      return;
+    }
+    this.isPromptGenerating.set(true);
+    this.promptStatus.set('Prompt captured - generation pipeline pending');
+
+    // Placeholder for upcoming live shader generation flow.
+    setTimeout(() => {
+      this.isPromptGenerating.set(false);
+      this.promptStatus.set('Ready to generate shader');
+    }, 350);
   }
 
   onAudioPlay(): void {

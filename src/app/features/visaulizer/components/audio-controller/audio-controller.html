@@ -1,0 +1,136 @@
+<section
+  class="controller"
+  [class.controller--collapsed]="isCollapsed"
+  aria-label="Player controller"
+>
+  <header class="controller__header">
+    <div class="display" aria-live="polite">
+      <span class="display__label">Now playing</span>
+      <div class="display__marquee">
+        <span class="display__text">
+          {{ selectedTrackName ?? 'No track loaded' }} -
+        </span>
+        <span class="display__text" aria-hidden="true">
+          {{ selectedTrackName ?? 'No track loaded' }} -
+        </span>
+      </div>
+    </div>
+    @if (isCollapsed) {
+      <div class="header-transport">
+        <button
+          type="button"
+          class="transport__button transport__button--small"
+          (click)="onTogglePlayback()"
+          [attr.aria-label]="isPlaying ? 'Pause' : 'Play'"
+        >
+          @if (isPlaying) {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
+            </svg>
+          } @else {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 5l12 7-12 7z" fill="currentColor" />
+            </svg>
+          }
+        </button>
+        <button
+          type="button"
+          class="transport__button transport__button--small"
+          (click)="onStop()"
+          aria-label="Stop"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7h10v10H7z" fill="currentColor" />
+          </svg>
+        </button>
+      </div>
+    }
+    <button
+      type="button"
+      class="icon-button"
+      (click)="onToggleController()"
+      [attr.aria-expanded]="!isCollapsed"
+      aria-label="Toggle controller"
+    >
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M4 14h16M4 10h16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </svg>
+    </button>
+  </header>
+
+  <div class="controller__body">
+    <div class="inputs">
+      <div class="row">
+        <label for="track-file">Local track</label>
+        <input
+          id="track-file"
+          type="file"
+          accept="audio/*"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <!--
+      <div class="row row--inline">
+        <label for="track-url">Stream URL</label>
+        <input
+          id="track-url"
+          type="url"
+          placeholder="https://example.com/track.mp3"
+          [formControl]="urlControl"
+        />
+        <button type="button" class="pill" (click)="onLoadUrl()">Load</button>
+      </div>
+      -->
+    </div>
+
+    <div class="transport">
+      <button
+        type="button"
+        class="transport__button"
+        (click)="onTogglePlayback()"
+        [attr.aria-label]="isPlaying ? 'Pause' : 'Play'"
+      >
+        @if (isPlaying) {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
+          </svg>
+        } @else {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 5l12 7-12 7z" fill="currentColor" />
+          </svg>
+        }
+      </button>
+      <button
+        type="button"
+        class="transport__button"
+        (click)="onStop()"
+        aria-label="Stop"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M7 7h10v10H7z" fill="currentColor" />
+        </svg>
+      </button>
+      <div class="status">{{ statusLabel }}</div>
+    </div>
+
+    <div class="presets" aria-label="Shader presets">
+      @for (preset of presets; track preset.id) {
+        <button
+          type="button"
+          class="preset"
+          [class.preset--active]="selectedPresetId === preset.id"
+          (click)="onSelectPreset(preset.id)"
+        >
+          {{ preset.label }}
+        </button>
+      }
+    </div>
+  </div>
+</section>

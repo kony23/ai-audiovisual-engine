@@ -1,0 +1,28 @@
+<section class="prompter" aria-label="Shader prompt" [class.prompter--minimized]="isMinimized">
+  <header class="prompter__header">
+    <h2>Shader Prompter</h2>
+    <span class="prompter__status">{{ generationStatus }}</span>
+    <button
+      type="button"
+      class="prompter__minimize"
+      (click)="toggleMinimized()"
+      [attr.aria-label]="isMinimized ? 'Expand shader prompter' : 'Minimize shader prompter'"
+      [attr.aria-expanded]="!isMinimized"
+    >
+      <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
+    </button>
+  </header>
+
+  <div class="prompter__body">
+    <label for="shader-prompt">Prompt</label>
+    <textarea
+      id="shader-prompt"
+      rows="4"
+      [formControl]="promptControl"
+      placeholder="Describe the shader style, motion and audio reaction..."
+    ></textarea>
+    <button type="button" class="generate" (click)="onGenerate()" [disabled]="disabled">
+      Generate
+    </button>
+  </div>
+</section>
