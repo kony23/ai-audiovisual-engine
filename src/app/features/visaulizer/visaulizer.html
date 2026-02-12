@@ -11,6 +11,11 @@
     (generate)="onGeneratePrompt()"
   />
 
+  <app-shader-control-panel
+    [controls]="shaderControls()"
+    (controlsChange)="onShaderControlsChange($event)"
+  />
+
   <app-audio-controller
     [urlControl]="urlControl"
     [isPlaying]="isPlaying()"

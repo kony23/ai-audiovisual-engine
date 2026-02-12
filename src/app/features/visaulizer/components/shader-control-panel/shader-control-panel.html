@@ -1,0 +1,41 @@
+<section
+  class="control-panel"
+  aria-label="Shader controls"
+  [class.control-panel--minimized]="isMinimized"
+>
+  <header class="control-panel__header">
+    <h2>Shader Controls</h2>
+    <div class="control-panel__actions">
+      <button type="button" class="control-panel__reset" (click)="onReset()">
+        Reset
+      </button>
+      <button
+        type="button"
+        class="control-panel__toggle"
+        (click)="toggleMinimized()"
+        [attr.aria-label]="isMinimized ? 'Expand shader controls' : 'Minimize shader controls'"
+        [attr.aria-expanded]="!isMinimized"
+      >
+        <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="control-panel__body">
+    @for (slider of sliderConfigs; track slider.key) {
+      <label class="slider" [attr.for]="'shader-slider-' + slider.key">
+        <span class="slider__name">{{ slider.label }}</span>
+        <span class="slider__value">{{ formatValue(readValue(slider.key)) }}</span>
+      </label>
+      <input
+        [id]="'shader-slider-' + slider.key"
+        type="range"
+        [min]="slider.min"
+        [max]="slider.max"
+        [step]="slider.step"
+        [value]="readValue(slider.key)"
+        (input)="onSliderInput(slider.key, $event)"
+      />
+    }
+  </div>
+</section>

@@ -1,6 +1,10 @@
 import { inject, Injectable } from '@angular/core';
 import * as THREE from 'three';
 import { AudioEngineService } from '../audio/audio-engine';
+import {
+  DEFAULT_SHADER_CONTROL_STATE,
+  ShaderControlState,
+} from './shader-control.model';
 import { ShaderProgram } from './shader-program.model';
 
 @Injectable({
@@ -20,6 +24,7 @@ export class ThreeEngineService {
   private readonly clock = new THREE.Clock();
   private time = 0;
   private isPlaybackActive = false;
+  private controls: ShaderControlState = { ...DEFAULT_SHADER_CONTROL_STATE };
 
   init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
     this.canvas = canvas;
@@ -99,15 +104,24 @@ export class ThreeEngineService {
     this.isPlaybackActive = active;
   }
 
+  setShaderControls(next: ShaderControlState): void {
+    this.controls = { ...next };
+  }
+
   animate = (): void => {
     requestAnimationFrame(this.animate);
 
     this.audio.update();
 
     const delta = this.clock.getDelta();
+    const controls = this.controls;
     if (this.isPlaybackActive) {
-      this.time += delta;
+      this.time += delta * controls.timeSpeed;
     }
+
+    const amplify = (value: number, gain = 1): number =>
+      Math.max(0, value * controls.reactivity * gain);
+
     const uniforms = this.material.uniforms;
 
     if (uniforms['uTime']) {
@@ -115,51 +129,51 @@ export class ThreeEngineService {
     }
 
     if (uniforms['uEnergy']) {
-      uniforms['uEnergy'].value = this.audio.energy();
+      uniforms['uEnergy'].value = amplify(this.audio.energy(), controls.energyGain);
     }
 
     if (uniforms['uBass']) {
-      uniforms['uBass'].value = this.audio.bass();
+      uniforms['uBass'].value = amplify(this.audio.bass(), controls.bassGain);
     }
 
     if (uniforms['uLowMid']) {
-      uniforms['uLowMid'].value = this.audio.lowMid();
+      uniforms['uLowMid'].value = amplify(this.audio.lowMid(), controls.midGain);
     }
 
     if (uniforms['uMid']) {
-      uniforms['uMid'].value = this.audio.mid();
+      uniforms['uMid'].value = amplify(this.audio.mid(), controls.midGain);
     }
 
     if (uniforms['uPresence']) {
-      uniforms['uPresence'].value = this.audio.presence();
+      uniforms['uPresence'].value = amplify(this.audio.presence(), controls.trebleGain);
     }
 
     if (uniforms['uTreble']) {
-      uniforms['uTreble'].value = this.audio.treble();
+      uniforms['uTreble'].value = amplify(this.audio.treble(), controls.trebleGain);
     }
 
     if (uniforms['uHigh']) {
-      uniforms['uHigh'].value = this.audio.treble();
+      uniforms['uHigh'].value = amplify(this.audio.treble(), controls.trebleGain);
     }
 
     if (uniforms['uRms']) {
-      uniforms['uRms'].value = this.audio.rms();
+      uniforms['uRms'].value = amplify(this.audio.rms(), controls.energyGain);
     }
 
     if (uniforms['uCentroid']) {
-      uniforms['uCentroid'].value = this.audio.spectralCentroid();
+      uniforms['uCentroid'].value = amplify(this.audio.spectralCentroid(), controls.fluxGain);
     }
 
     if (uniforms['uFlux']) {
-      uniforms['uFlux'].value = this.audio.spectralFlux();
+      uniforms['uFlux'].value = amplify(this.audio.spectralFlux(), controls.fluxGain);
     }
 
     if (uniforms['uZcr']) {
-      uniforms['uZcr'].value = this.audio.zcr();
+      uniforms['uZcr'].value = amplify(this.audio.zcr(), controls.fluxGain);
     }
 
     if (uniforms['uCrest']) {
-      uniforms['uCrest'].value = this.audio.crest();
+      uniforms['uCrest'].value = amplify(this.audio.crest(), controls.energyGain);
     }
 
     this.renderer.render(this.scene, this.camera);

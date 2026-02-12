@@ -13,6 +13,10 @@ import { FormControl } from '@angular/forms';
 import * as THREE from 'three';
 import { AudioEngineService } from '../../core/audio/audio-engine';
 import {
+  DEFAULT_SHADER_CONTROL_STATE,
+  ShaderControlState,
+} from '../../core/visual/shader-control.model';
+import {
   ShaderGenerationError,
   ShaderGenerationService,
 } from '../../core/visual/shader-generation.service';
@@ -22,11 +26,12 @@ import {
   AudioControllerComponent,
   AudioControllerPreset,
 } from './components/audio-controller/audio-controller';
+import { ShaderControlPanelComponent } from './components/shader-control-panel/shader-control-panel';
 import { ShaderPrompterComponent } from './components/shader-prompter/shader-prompter';
 
 @Component({
   selector: 'app-visualizer',
-  imports: [AudioControllerComponent, ShaderPrompterComponent],
+  imports: [AudioControllerComponent, ShaderPrompterComponent, ShaderControlPanelComponent],
   templateUrl: './visaulizer.html',
   styleUrl: './visaulizer.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +59,9 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly isPromptGenerating = signal(false);
   readonly promptError = signal<string | null>(null);
   readonly isGeneratedShaderActive = signal(false);
+  readonly shaderControls = signal<ShaderControlState>({
+    ...DEFAULT_SHADER_CONTROL_STATE,
+  });
 
   readonly statusLabel = computed(() => {
     if (this.shaderLoadError()) return 'Shader load error';
@@ -114,6 +122,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       this.vertexShaderSource = await this.loadShader('/shaders/vertex.glsl');
       const fragment = await this.loadPresetFragment(this.selectedPresetId());
       this.three.init(this.canvas.nativeElement, this.buildProgram(fragment));
+      this.three.setShaderControls(this.shaderControls());
       this.three.animate();
     } catch (error) {
       this.shaderLoadError.set('Failed to load shaders');
@@ -258,6 +267,11 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   onAudioPause(): void {
     this.isPlaying.set(false);
     this.three.setPlaybackActive(false);
+  }
+
+  onShaderControlsChange(next: ShaderControlState): void {
+    this.shaderControls.set(next);
+    this.three.setShaderControls(next);
   }
 
   private async setAudioSource(source: string): Promise<void> {
