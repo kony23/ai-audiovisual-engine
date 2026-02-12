@@ -23,9 +23,13 @@
           type="button"
           class="transport__button transport__button--small"
           (click)="onTogglePlayback()"
-          [attr.aria-label]="isPlaying ? 'Pause' : 'Play'"
+          [attr.aria-label]="isLiveSourceActive ? 'Stop live source' : (isPlaying ? 'Pause' : 'Play')"
         >
-          @if (isPlaying) {
+          @if (isLiveSourceActive) {
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 7h10v10H7z" fill="currentColor" />
+            </svg>
+          } @else if (isPlaying) {
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
             </svg>
@@ -77,6 +81,28 @@
           (change)="onFileSelected($event)"
         />
       </div>
+      <div class="row">
+        <label>Live input</label>
+        <div class="source-actions">
+          <button type="button" class="pill" (click)="onUseMicrophone()">
+            Use microphone
+          </button>
+          <div class="system-audio-wrap">
+            <button type="button" class="pill system-audio-button" (click)="onUseSystemAudio()">
+              Use system/browser audio
+            </button>
+            <div class="source-hint" role="note">
+              Enable "Share system audio" in the browser share dialog.
+            </div>
+          </div>
+          @if (isLiveSourceActive) {
+            <button type="button" class="pill pill--danger" (click)="onStopLiveSource()">
+              Stop live source
+            </button>
+          }
+        </div>
+        <div class="source-label">Source: {{ activeSourceLabel }}</div>
+      </div>
 
       <!--
       <div class="row row--inline">
@@ -97,9 +123,13 @@
         type="button"
         class="transport__button"
         (click)="onTogglePlayback()"
-        [attr.aria-label]="isPlaying ? 'Pause' : 'Play'"
+        [attr.aria-label]="isLiveSourceActive ? 'Stop live source' : (isPlaying ? 'Pause' : 'Play')"
       >
-        @if (isPlaying) {
+        @if (isLiveSourceActive) {
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 7h10v10H7z" fill="currentColor" />
+          </svg>
+        } @else if (isPlaying) {
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M6 5h4v14H6zM14 5h4v14h-4z" fill="currentColor" />
           </svg>
@@ -123,16 +153,19 @@
     </div>
 
     <div class="presets" aria-label="Shader presets">
-      @for (preset of presets; track preset.id) {
-        <button
-          type="button"
-          class="preset"
-          [class.preset--active]="selectedPresetId === preset.id"
-          (click)="onSelectPreset(preset.id)"
-        >
-          {{ preset.label }}
-        </button>
-      }
+      <label class="presets__label">Shader presets</label>
+      <div class="presets__list">
+        @for (preset of presets; track preset.id) {
+          <button
+            type="button"
+            class="preset"
+            [class.preset--active]="selectedPresetId === preset.id"
+            (click)="onSelectPreset(preset.id)"
+          >
+            {{ preset.label }}
+          </button>
+        }
+      </div>
     </div>
   </div>
 </section>

@@ -15,6 +15,8 @@ export interface AudioControllerPreset {
 export class AudioControllerComponent {
   @Input({ required: true }) urlControl!: FormControl<string>;
   @Input({ required: true }) isPlaying = false;
+  @Input({ required: true }) isLiveSourceActive = false;
+  @Input({ required: true }) activeSourceLabel = 'None';
   @Input({ required: true }) selectedTrackName: string | null = null;
   @Input({ required: true }) statusLabel = 'Waiting for track';
   @Input({ required: true }) isCollapsed = false;
@@ -22,6 +24,9 @@ export class AudioControllerComponent {
   @Input({ required: true }) presets: readonly AudioControllerPreset[] = [];
 
   @Output() readonly fileSelected = new EventEmitter<Event>();
+  @Output() readonly useMicrophone = new EventEmitter<void>();
+  @Output() readonly useSystemAudio = new EventEmitter<void>();
+  @Output() readonly stopLiveSource = new EventEmitter<void>();
   @Output() readonly loadUrl = new EventEmitter<void>();
   @Output() readonly togglePlayback = new EventEmitter<void>();
   @Output() readonly stop = new EventEmitter<void>();
@@ -34,6 +39,18 @@ export class AudioControllerComponent {
 
   onLoadUrl(): void {
     this.loadUrl.emit();
+  }
+
+  onUseMicrophone(): void {
+    this.useMicrophone.emit();
+  }
+
+  onUseSystemAudio(): void {
+    this.useSystemAudio.emit();
+  }
+
+  onStopLiveSource(): void {
+    this.stopLiveSource.emit();
   }
 
   onTogglePlayback(): void {

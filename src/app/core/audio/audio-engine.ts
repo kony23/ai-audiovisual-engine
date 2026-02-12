@@ -2,6 +2,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { AudioMetrics } from './audio-metrics.model';
 
 type AudioStatus = 'idle' | 'running' | 'error';
+export type AudioInputSource = 'file' | 'microphone' | 'system';
 
 @Injectable({ providedIn: 'root' })
 export class AudioEngineService {
@@ -9,7 +10,9 @@ export class AudioEngineService {
   private audioContext: AudioContext | null = null;
   private analyser: AnalyserNode | null = null;
   private source: AudioNode | null = null;
+  private stream: MediaStream | null = null;
   private mediaElement: HTMLAudioElement | null = null;
+  private mediaElementSource: MediaElementAudioSourceNode | null = null;
 
   private readonly fftSize = 1024;
   private readonly frequencyData = new Uint8Array(this.fftSize / 2);
@@ -19,6 +22,7 @@ export class AudioEngineService {
 
   // --- state ---
   readonly status = signal<AudioStatus>('idle');
+  readonly activeSource = signal<AudioInputSource | null>(null);
 
   private readonly rawMetrics = signal<AudioMetrics>({
     rms: 0,
@@ -52,47 +56,63 @@ export class AudioEngineService {
   // --- init from microphone ---
   async initMicrophone(): Promise<void> {
     try {
-      this.audioContext = new AudioContext();
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this.source = this.audioContext.createMediaStreamSource(stream);
-
-      this.setupAnalyser();
-      this.source.connect(this.analyser!);
-
-      this.status.set('running');
+      await this.initFromMediaStream(stream, 'microphone');
     } catch {
       this.status.set('error');
+      this.activeSource.set(null);
+    }
+  }
+
+  // --- init from system playback via screen-share audio ---
+  async initSystemAudio(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({
+        video: true,
+        audio: true,
+      });
+
+      if (!stream.getAudioTracks().length) {
+        stream.getTracks().forEach((track) => track.stop());
+        throw new Error('No system audio track available');
+      }
+
+      await this.initFromMediaStream(stream, 'system');
+    } catch {
+      this.status.set('error');
+      this.activeSource.set(null);
     }
   }
 
   // --- init from <audio> element ---
   async initFromAudioElement(element: HTMLAudioElement): Promise<void> {
     try {
-      if (!this.audioContext) {
-        this.audioContext = new AudioContext();
-      }
+      await this.ensureAudioContext();
 
-      if (this.mediaElement !== element) {
-        this.source?.disconnect();
-        this.analyser?.disconnect();
-
-        this.source = this.audioContext.createMediaElementSource(element);
+      if (!this.mediaElementSource || this.mediaElement !== element) {
+        this.mediaElementSource?.disconnect();
+        this.mediaElementSource = this.audioContext!.createMediaElementSource(element);
         this.mediaElement = element;
-
-        this.setupAnalyser();
-        this.source.connect(this.analyser!);
-        this.analyser!.connect(this.audioContext.destination);
       }
 
-      if (this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
-      }
-
+      this.connectSource(this.mediaElementSource, { routeToDestination: true, stopStream: true });
       this.status.set('running');
+      this.activeSource.set('file');
     } catch {
       this.status.set('error');
+      this.activeSource.set(null);
     }
+  }
+
+  stopLiveInput(): void {
+    if (this.activeSource() !== 'microphone' && this.activeSource() !== 'system') {
+      return;
+    }
+
+    this.disconnectCurrentSource();
+    this.stopStreamTracks();
+    this.status.set('idle');
+    this.activeSource.set(null);
   }
 
   // --- main update loop (called from render loop) ---
@@ -110,6 +130,78 @@ export class AudioEngineService {
     this.analyser = this.audioContext!.createAnalyser();
     this.analyser.fftSize = this.fftSize;
     this.analyser.smoothingTimeConstant = 0.8;
+  }
+
+  private async initFromMediaStream(stream: MediaStream, source: AudioInputSource): Promise<void> {
+    await this.ensureAudioContext();
+    this.stopStreamTracks();
+    this.stream = stream;
+    this.bindStreamEnded(stream);
+
+    const streamSource = this.audioContext!.createMediaStreamSource(stream);
+    this.connectSource(streamSource, { routeToDestination: false, stopStream: false });
+    this.status.set('running');
+    this.activeSource.set(source);
+  }
+
+  private async ensureAudioContext(): Promise<void> {
+    if (!this.audioContext) {
+      this.audioContext = new AudioContext();
+    }
+    if (!this.analyser) {
+      this.setupAnalyser();
+    }
+    if (this.audioContext.state === 'suspended') {
+      await this.audioContext.resume();
+    }
+  }
+
+  private connectSource(
+    node: AudioNode,
+    options: { routeToDestination: boolean; stopStream: boolean },
+  ): void {
+    this.disconnectCurrentSource();
+    if (options.stopStream) {
+      this.stopStreamTracks();
+    }
+
+    if (!this.analyser) {
+      this.setupAnalyser();
+    }
+
+    node.connect(this.analyser!);
+
+    if (options.routeToDestination) {
+      this.analyser!.connect(this.audioContext!.destination);
+    }
+
+    this.source = node;
+    this.hasPreviousSpectrum = false;
+    this.previousSpectrum.fill(0);
+  }
+
+  private disconnectCurrentSource(): void {
+    this.source?.disconnect();
+    this.source = null;
+    this.analyser?.disconnect();
+  }
+
+  private stopStreamTracks(): void {
+    if (!this.stream) return;
+    this.stream.getTracks().forEach((track) => track.stop());
+    this.stream = null;
+  }
+
+  private bindStreamEnded(stream: MediaStream): void {
+    for (const track of stream.getTracks()) {
+      track.addEventListener('ended', () => {
+        if (this.stream !== stream) return;
+        this.disconnectCurrentSource();
+        this.stopStreamTracks();
+        this.status.set('idle');
+        this.activeSource.set(null);
+      });
+    }
   }
 
   private calculateMetrics(): AudioMetrics {

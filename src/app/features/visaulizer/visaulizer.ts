@@ -66,13 +66,26 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly statusLabel = computed(() => {
     if (this.shaderLoadError()) return 'Shader load error';
     const status = this.audio.status();
+    const source = this.audio.activeSource();
     if (status === 'error') return 'Audio error';
+    if (status === 'running' && source === 'microphone') return 'Microphone active';
+    if (status === 'running' && source === 'system') return 'System audio active';
     if (status === 'running') return 'Audio ready';
     return 'Waiting for track';
   });
+  readonly isLiveSourceActive = computed(() => {
+    const source = this.audio.activeSource();
+    return source === 'microphone' || source === 'system';
+  });
+  readonly activeSourceLabel = computed(() => {
+    const source = this.audio.activeSource();
+    if (source === 'microphone') return 'Microphone';
+    if (source === 'system') return 'System audio';
+    if (source === 'file') return 'File';
+    return 'None';
+  });
 
   private audioObjectUrl: string | null = null;
-  private audioInitialized = false;
   private vertexShaderSource: string | null = null;
 
   readonly presets = [
@@ -134,6 +147,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     if (this.audioObjectUrl) {
       URL.revokeObjectURL(this.audioObjectUrl);
     }
+    this.audio.stopLiveInput();
   }
 
   async onFileSelected(event: Event): Promise<void> {
@@ -162,6 +176,11 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   }
 
   async onTogglePlayback(): Promise<void> {
+    if (this.isLiveSourceActive()) {
+      this.onStopLiveSource();
+      return;
+    }
+
     const audio = this.audioElement?.nativeElement;
     if (!audio?.src) return;
     if (audio.paused) {
@@ -176,10 +195,42 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   }
 
   async onStop(): Promise<void> {
+    if (this.isLiveSourceActive()) {
+      this.onStopLiveSource();
+      return;
+    }
+
     const audio = this.audioElement?.nativeElement;
     if (!audio?.src) return;
     audio.pause();
     audio.currentTime = 0;
+    this.three.setPlaybackActive(false);
+  }
+
+  async onUseMicrophone(): Promise<void> {
+    this.stopAudioElementPlayback();
+    await this.audio.initMicrophone();
+    if (this.audio.status() !== 'running') return;
+
+    this.selectedTrackName.set('Microphone input');
+    this.isPlaying.set(true);
+    this.three.setPlaybackActive(true);
+  }
+
+  async onUseSystemAudio(): Promise<void> {
+    this.stopAudioElementPlayback();
+    await this.audio.initSystemAudio();
+    if (this.audio.status() !== 'running') return;
+
+    this.selectedTrackName.set('System audio input');
+    this.isPlaying.set(true);
+    this.three.setPlaybackActive(true);
+  }
+
+  onStopLiveSource(): void {
+    this.audio.stopLiveInput();
+    this.selectedTrackName.set(null);
+    this.isPlaying.set(false);
     this.three.setPlaybackActive(false);
   }
 
@@ -260,11 +311,13 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   }
 
   onAudioPlay(): void {
+    if (this.audio.activeSource() !== 'file') return;
     this.isPlaying.set(true);
     this.three.setPlaybackActive(true);
   }
 
   onAudioPause(): void {
+    if (this.audio.activeSource() !== 'file') return;
     this.isPlaying.set(false);
     this.three.setPlaybackActive(false);
   }
@@ -278,7 +331,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     const audio = this.audioElement.nativeElement;
     audio.src = source;
     audio.load();
-    await this.ensureAudioInitialized();
+    await this.audio.initFromAudioElement(audio);
     try {
       await audio.play();
     } catch (error) {
@@ -321,10 +374,11 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     };
   }
 
-  private async ensureAudioInitialized(): Promise<void> {
-    if (this.audioInitialized) return;
-    await this.audio.initFromAudioElement(this.audioElement.nativeElement);
-    this.audioInitialized = true;
+  private stopAudioElementPlayback(): void {
+    const audio = this.audioElement?.nativeElement;
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
   }
 
   private async loadShader(path: string): Promise<string> {
