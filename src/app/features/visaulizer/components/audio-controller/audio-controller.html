@@ -7,12 +7,14 @@
     <div class="display" aria-live="polite">
       <span class="display__label">Now playing</span>
       <div class="display__marquee">
-        <span class="display__text">
-          {{ selectedTrackName ?? 'No track loaded' }} -
-        </span>
-        <span class="display__text" aria-hidden="true">
-          {{ selectedTrackName ?? 'No track loaded' }} -
-        </span>
+        <div class="display__track">
+          <span class="display__text">
+            {{ selectedTrackName ?? 'No track loaded' }} -
+          </span>
+          <span class="display__text" aria-hidden="true">
+            {{ selectedTrackName ?? 'No track loaded' }} -
+          </span>
+        </div>
       </div>
     </div>
     @if (isCollapsed) {

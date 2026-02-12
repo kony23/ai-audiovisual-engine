@@ -54,11 +54,14 @@
 .display__marquee {
   overflow: hidden;
   white-space: nowrap;
-  display: flex;
-  gap: 1.5rem;
-  animation: marquee 12s linear infinite;
   mask-image: linear-gradient(90deg, transparent 0%, #000 8%, #000 92%, transparent 100%);
   width: 100%;
+}
+
+.display__track {
+  display: inline-flex;
+  width: max-content;
+  animation: marquee 12s linear infinite;
 }
 
 .display__text {
@@ -66,9 +69,6 @@
   padding-right: 1.5rem;
 }
 
-.controller--collapsed .display__marquee {
-  animation-play-state: paused;
-}
 
 @keyframes marquee {
   0% {
@@ -231,3 +231,5 @@ input:focus-visible {
     flex-wrap: wrap;
   }
 }
+
+
