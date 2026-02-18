@@ -257,12 +257,12 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
     const prompt = this.promptControl.value.trim();
     if (!prompt) {
       this.promptStatus.set('Prompt is empty');
-      this.promptError.set('Wpisz prompt przed uruchomieniem generowania.');
+      this.promptError.set('Enter a prompt before starting generation.');
       return;
     }
     if (!this.vertexShaderSource) {
       this.promptStatus.set('Shader engine unavailable');
-      this.promptError.set('Brak vertex shadera. Odswiez strone i sproboj ponownie.');
+      this.promptError.set('Missing vertex shader. Refresh the page and try again.');
       return;
     }
 
@@ -301,7 +301,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
         this.promptError.set(this.mapGenerationError(error));
       } else {
         this.promptStatus.set('Generation failed');
-        this.promptError.set('Nieoczekiwany blad generowania shadera.');
+        this.promptError.set('Unexpected shader generation error.');
       }
       await this.applySmoothPresetFallback();
       console.error(error);
@@ -410,23 +410,23 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       this.promptStatus.set('Generation failed - smooth preset applied');
     } catch (fallbackError) {
       this.promptStatus.set('Generation failed');
-      this.promptError.set('Nie udalo sie zaladowac fallbacku smooth.');
+      this.promptError.set('Failed to load smooth fallback.');
       console.error(fallbackError);
     }
   }
 
   private mapGenerationError(error: ShaderGenerationError): string {
     if (error.code === 'COMPILATION' && error.details.length) {
-      return `Blad kompilacji GLSL: ${error.details[0]}`;
+      return `GLSL compilation error: ${error.details[0]}`;
     }
     if (error.code === 'API' && error.details.length) {
-      return `Blad API: ${error.details[0]}`;
+      return `API error: ${error.details[0]}`;
     }
     if (error.code === 'INVALID_RESPONSE') {
-      return 'API zwrocilo nieprawidlowy shader.';
+      return 'API returned an invalid shader.';
     }
     if (error.code === 'EMPTY_PROMPT') {
-      return 'Prompt nie moze byc pusty.';
+      return 'Prompt cannot be empty.';
     }
     return error.message;
   }

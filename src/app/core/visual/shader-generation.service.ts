@@ -31,13 +31,13 @@ interface ShaderGenerationApiResponse {
 
 @Injectable({ providedIn: 'root' })
 export class ShaderGenerationService {
-  // Endpoint backendu odpowiedzialny za generowanie fragment shadera z promptu.
+  // Backend endpoint responsible for generating a fragment shader from a prompt.
   private readonly endpoint = '/api/shaders/generate';
 
-  // Główny punkt wejścia:
-  // 1) waliduje prompt,
-  // 2) próbuje wygenerować shader przez API,
-  // 3) przy problemie z API (sieć/HTTP/payload) przechodzi na lokalny fallback.
+  // Main entry point:
+  // 1) validates prompt,
+  // 2) tries to generate shader through API,
+  // 3) switches to local fallback on API/network/payload issues.
   async generateFragment(prompt: string): Promise<ShaderGenerationResult> {
     const normalizedPrompt = prompt.trim();
     if (!normalizedPrompt) {
@@ -72,7 +72,7 @@ export class ShaderGenerationService {
         }),
       });
 
-      // Błąd HTTP traktujemy jako problem z providerem zdalnym.
+      // Treat HTTP failure as a remote provider issue.
       if (!response.ok) {
         const bodyPreview = (await response.text()).slice(0, 200);
         throw new ShaderGenerationError(
@@ -86,21 +86,21 @@ export class ShaderGenerationService {
       const fragment = this.extractFragment(data);
       return { fragment, source: 'api' };
     } catch (error) {
-      // EMPTY_PROMPT to błąd wejścia użytkownika - nie ma sensu fallback.
+      // EMPTY_PROMPT is a user input error, so fallback is not meaningful.
       if (error instanceof ShaderGenerationError && error.code === 'EMPTY_PROMPT') {
         throw error;
       }
 
-      // Każdy problem po stronie zdalnego generatora (sieć/HTTP/zły payload)
-      // zamieniamy na lokalny fallback, aby user zawsze dostał działający shader.
+      // Any remote generator issue (network/HTTP/invalid payload)
+      // is converted to local fallback so the user always gets a working shader.
       const fallbackFragment = this.buildFallbackFragment(normalizedPrompt);
       return { fragment: fallbackFragment, source: 'fallback' };
     }
   }
 
-  // Kompilacja i linkowanie programu WebGL przed aplikacją shadera w Three.js.
-  // Uwaga: ShaderMaterial w Three.js dostaje dodatkowe definicje/uniformy "automatycznie",
-  // więc walidacja używa prostego, niezależnego vertex shadera testowego.
+  // Compile and link WebGL program before applying shader in Three.js.
+  // Note: Three.js ShaderMaterial receives extra defines/uniforms automatically,
+  // so validation uses a simple, independent test vertex shader.
   validateProgram(vertexSource: string, fragmentSource: string): readonly string[] {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl');
@@ -164,7 +164,7 @@ void main() {
     return errors;
   }
 
-  // Parsuje odpowiedź API i wyciąga fragment shader z obsługą dwóch formatów payloadu.
+  // Parse API response and extract fragment shader from two payload formats.
   private extractFragment(data: ShaderGenerationApiResponse): string {
     const candidate =
       typeof data.fragment === 'string'
@@ -195,8 +195,8 @@ void main() {
     return sanitized;
   }
 
-  // Lokalny fallback: deterministyczny shader na bazie promptu (hash -> parametry koloru/ruchu).
-  // Dzięki temu użytkownik dostaje wynik nawet gdy API jest niedostępne.
+  // Local fallback: deterministic shader based on prompt (hash -> color/motion parameters).
+  // This ensures a result even when the API is unavailable.
   private buildFallbackFragment(prompt: string): string {
     const hash = this.hashPrompt(prompt);
     const hueA = (hash % 360).toFixed(1);
@@ -259,7 +259,7 @@ void main() {
 `.trim();
   }
 
-  // Prosty hash FNV-1a do powtarzalnej parametryzacji fallbacku.
+  // Simple FNV-1a hash for repeatable fallback parameterization.
   private hashPrompt(input: string): number {
     let hash = 2166136261;
     for (let i = 0; i < input.length; i++) {
