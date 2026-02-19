@@ -2,15 +2,18 @@
   <header class="prompter__header">
     <h2>Shader Prompter</h2>
     <span class="prompter__status">{{ generationStatus }}</span>
-    <button
-      type="button"
-      class="prompter__minimize"
-      (click)="toggleMinimized()"
-      [attr.aria-label]="isMinimized ? 'Expand shader prompter' : 'Minimize shader prompter'"
-      [attr.aria-expanded]="!isMinimized"
-    >
-      <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
-    </button>
+    <div class="prompter__minimize-wrap">
+      <button
+        type="button"
+        class="prompter__minimize"
+        (click)="toggleMinimized()"
+        [attr.aria-label]="isMinimized ? 'Expand shader prompter' : 'Minimize shader prompter'"
+        [attr.aria-expanded]="!isMinimized"
+      >
+        <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
+      </button>
+      <div class="prompter__hint" role="note">Show shader prompter</div>
+    </div>
   </header>
 
   <div class="prompter__body">

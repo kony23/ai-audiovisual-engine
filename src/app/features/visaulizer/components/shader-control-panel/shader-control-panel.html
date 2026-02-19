@@ -9,15 +9,18 @@
       <button type="button" class="control-panel__reset" (click)="onReset()">
         Reset
       </button>
-      <button
-        type="button"
-        class="control-panel__toggle"
-        (click)="toggleMinimized()"
-        [attr.aria-label]="isMinimized ? 'Expand shader controls' : 'Minimize shader controls'"
-        [attr.aria-expanded]="!isMinimized"
-      >
-        <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
-      </button>
+      <div class="control-panel__toggle-wrap">
+        <button
+          type="button"
+          class="control-panel__toggle"
+          (click)="toggleMinimized()"
+          [attr.aria-label]="isMinimized ? 'Expand shader controls' : 'Minimize shader controls'"
+          [attr.aria-expanded]="!isMinimized"
+        >
+          <span aria-hidden="true">{{ isMinimized ? '+' : '-' }}</span>
+        </button>
+        <div class="control-panel__hint" role="note">Show shader control panel</div>
+      </div>
     </div>
   </header>
 

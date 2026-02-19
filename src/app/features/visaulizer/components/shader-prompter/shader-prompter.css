@@ -19,6 +19,7 @@
   height: 2.5rem;
   left: auto;
   padding: 0;
+  overflow: visible;
   border-radius: 999px;
   display: grid;
   place-items: center;
@@ -44,8 +45,13 @@
   color: rgba(255, 255, 255, 0.7);
 }
 
-.prompter__minimize {
+.prompter__minimize-wrap {
+  position: relative;
   margin-left: auto;
+  display: inline-flex;
+}
+
+.prompter__minimize {
   width: 1.9rem;
   height: 1.9rem;
   border: 1px solid rgba(255, 255, 255, 0.26);
@@ -62,6 +68,22 @@
 .prompter__minimize span {
   font-size: 1rem;
   font-weight: 700;
+}
+
+.prompter__hint {
+  position: absolute;
+  right: calc(100% + 0.45rem);
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3;
+  display: none;
+  width: max-content;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.45rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(9, 12, 24, 0.95);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.62);
 }
 
 .prompter__body {
@@ -97,6 +119,15 @@ textarea {
 
 .prompter--minimized .prompter__minimize {
   margin: 0;
+}
+
+.prompter--minimized .prompter__minimize-wrap {
+  margin: 0;
+}
+
+.prompter--minimized .prompter__minimize-wrap:hover .prompter__hint,
+.prompter--minimized .prompter__minimize:focus-visible + .prompter__hint {
+  display: block;
 }
 
 .prompter--minimized .prompter__header h2,
