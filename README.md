@@ -1,4 +1,4 @@
-# AiAudiovisualEngine
+# AiAudiovisualEngine ([Try It!](https://kony23.github.io/ai-audiovisual-engine/))
 
 Audio-reactive 3D/GLSL visualizer with prompt-based shader generation.
 
