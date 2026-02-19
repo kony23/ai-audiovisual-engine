@@ -53,7 +53,7 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
   readonly selectedTrackName = signal<string | null>(null);
   readonly shaderLoadError = signal<string | null>(null);
   readonly isControllerCollapsed = signal(false);
-  readonly selectedPresetId = signal('nebula');
+  readonly selectedPresetId = signal('smooth');
   readonly promptControl = new FormControl('', { nonNullable: true });
   readonly promptStatus = signal('Prompt idle');
   readonly isPromptGenerating = signal(false);
@@ -90,6 +90,11 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
 
   readonly presets = [
     {
+      id: 'smooth',
+      label: 'Smooth',
+      fragmentPath: '/shaders/smooth.glsl',
+    },
+    {
       id: 'nebula-drift',
       label: 'Nebula Drift',
       fragmentPath: '/shaders/fragment.glsl',
@@ -118,11 +123,6 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       id: 'soft',
       label: 'Soft',
       fragmentPath: '/shaders/soft.glsl',
-    },
-    {
-      id: 'smooth',
-      label: 'Smooth',
-      fragmentPath: '/shaders/smooth.glsl',
     },
   ];
   readonly presetOptions: readonly AudioControllerPreset[] = this.presets.map((preset) => ({
