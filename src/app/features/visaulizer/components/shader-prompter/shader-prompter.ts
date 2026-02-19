@@ -14,7 +14,7 @@ export class ShaderPrompterComponent implements OnChanges {
   @Input() disabled = false;
   @Input() isLoading = false;
   @Input() generatedActive = false;
-  isMinimized = false;
+  isMinimized = true;
 
   @Output() readonly generate = new EventEmitter<void>();
 

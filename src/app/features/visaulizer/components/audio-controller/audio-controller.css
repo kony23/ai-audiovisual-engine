@@ -62,6 +62,8 @@
   display: inline-flex;
   width: max-content;
   animation: marquee 12s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .display__text {

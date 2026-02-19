@@ -23,7 +23,7 @@ export class ShaderControlPanelComponent {
   @Input({ required: true }) controls!: ShaderControlState;
   @Output() readonly controlsChange = new EventEmitter<ShaderControlState>();
 
-  isMinimized = false;
+  isMinimized = true;
 
   readonly sliderConfigs: readonly SliderConfig[] = [
     { key: 'timeSpeed', label: 'Time speed', min: 0.1, max: 3, step: 0.05 },

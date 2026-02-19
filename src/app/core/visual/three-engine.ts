@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, OnDestroy } from '@angular/core';
 import * as THREE from 'three';
 import { AudioEngineService } from '../audio/audio-engine';
 import {
@@ -10,7 +10,7 @@ import { ShaderProgram } from './shader-program.model';
 @Injectable({
   providedIn: 'root'
 })
-export class ThreeEngineService {
+export class ThreeEngineService implements OnDestroy {
 
   private readonly audio = inject(AudioEngineService);
 
@@ -20,11 +20,14 @@ export class ThreeEngineService {
   private renderer!: THREE.WebGLRenderer;
   private material!: THREE.ShaderMaterial;
   private mesh!: THREE.Mesh;
+  private readonly drawingBufferSize = new THREE.Vector2();
 
   private readonly clock = new THREE.Clock();
   private time = 0;
   private isPlaybackActive = false;
   private controls: ShaderControlState = { ...DEFAULT_SHADER_CONTROL_STATE };
+  private readonly cappedPixelRatio = Math.min(window.devicePixelRatio || 1, 1.25);
+  private resizeHandler: (() => void) | null = null;
 
   init(canvas: HTMLCanvasElement, program: ShaderProgram): void {
     this.canvas = canvas;
@@ -39,12 +42,8 @@ export class ThreeEngineService {
       powerPreference: 'high-performance'
     });
 
-    this.renderer.setPixelRatio(window.devicePixelRatio);
-    this.renderer.setSize(
-      canvas.clientWidth,
-      canvas.clientHeight,
-      false
-    );
+    this.renderer.setPixelRatio(this.cappedPixelRatio);
+    this.resizeRendererToCanvas();
 
     const geometry = new THREE.PlaneGeometry(2, 2);
 
@@ -58,24 +57,14 @@ export class ThreeEngineService {
     this.scene.add(this.mesh);
 
     // Initial resolution.
-    this.material.uniforms['uResolution'].value.set(
-      canvas.clientWidth,
-      canvas.clientHeight
-    );
+    this.updateResolutionUniform();
 
     // Handle resize.
-    window.addEventListener('resize', () => {
-      this.renderer.setSize(
-        canvas.clientWidth,
-        canvas.clientHeight,
-        false
-      );
-
-      this.material.uniforms['uResolution'].value.set(
-        canvas.clientWidth,
-        canvas.clientHeight
-      );
-    });
+    this.resizeHandler = () => {
+      this.resizeRendererToCanvas();
+      this.updateResolutionUniform();
+    };
+    window.addEventListener('resize', this.resizeHandler);
   }
 
   setProgram(program: ShaderProgram): void {
@@ -92,12 +81,7 @@ export class ThreeEngineService {
     this.material = nextMaterial;
     this.mesh.material = nextMaterial;
 
-    if (this.canvas && this.material.uniforms['uResolution']) {
-      this.material.uniforms['uResolution'].value.set(
-        this.canvas.clientWidth,
-        this.canvas.clientHeight
-      );
-    }
+    this.updateResolutionUniform();
   }
 
   setPlaybackActive(active: boolean): void {
@@ -106,6 +90,13 @@ export class ThreeEngineService {
 
   setShaderControls(next: ShaderControlState): void {
     this.controls = { ...next };
+  }
+
+  ngOnDestroy(): void {
+    if (this.resizeHandler) {
+      window.removeEventListener('resize', this.resizeHandler);
+      this.resizeHandler = null;
+    }
   }
 
   animate = (): void => {
@@ -178,4 +169,22 @@ export class ThreeEngineService {
 
     this.renderer.render(this.scene, this.camera);
   };
+
+  private resizeRendererToCanvas(): void {
+    if (!this.renderer || !this.canvas) return;
+    this.renderer.setSize(
+      this.canvas.clientWidth,
+      this.canvas.clientHeight,
+      false
+    );
+  }
+
+  private updateResolutionUniform(): void {
+    if (!this.renderer || !this.material?.uniforms['uResolution']) return;
+    this.renderer.getDrawingBufferSize(this.drawingBufferSize);
+    this.material.uniforms['uResolution'].value.set(
+      this.drawingBufferSize.x,
+      this.drawingBufferSize.y
+    );
+  }
 }

@@ -90,9 +90,14 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
 
   readonly presets = [
     {
-      id: 'nebula',
+      id: 'nebula-drift',
       label: 'Nebula Drift',
       fragmentPath: '/shaders/fragment.glsl',
+    },
+    {
+      id: 'nebula',
+      label: 'Nebula',
+      fragmentPath: '/shaders/nebula.glsl',
     },
     {
       id: 'aurora',
@@ -105,19 +110,14 @@ export class VisualizerComponent implements AfterViewInit, OnDestroy {
       fragmentPath: '/shaders/fragment-ion.glsl',
     },
     {
-      id: 'new',
-      label: 'New',
-      fragmentPath: '/shaders/new.glsl',
+      id: 'vortex',
+      label: 'Vortex',
+      fragmentPath: '/shaders/vortex.glsl',
     },
     {
-      id: 'gpt-free',
-      label: 'Gpt-free',
-      fragmentPath: '/shaders/gpt-free.glsl',
-    },
-    {
-      id: 'gpt-free-soft',
-      label: 'Gpt-free Soft',
-      fragmentPath: '/shaders/gpt-free-soft.glsl',
+      id: 'soft',
+      label: 'Soft',
+      fragmentPath: '/shaders/soft.glsl',
     },
     {
       id: 'smooth',
