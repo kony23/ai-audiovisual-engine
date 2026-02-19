@@ -7,6 +7,9 @@
     "start:ui": "ng serve --proxy-config proxy.conf.json",
     "start:api": "node server/local-llm-server.mjs",
     "build": "ng build",
+    "build:gh-pages": "ng build --configuration production --base-href \"/ai-audiovisual-engine/\"",
+    "patch:gh-pages-paths": "node -e \"const fs=require('node:fs');const p='dist/ai-audiovisual-engine/browser';for(const f of fs.readdirSync(p)){if(f.endsWith('.js')){const fp=p+'/'+f;const c=fs.readFileSync(fp,'utf8').split('/shaders/').join('shaders/');fs.writeFileSync(fp,c);}}\"",
+    "deploy:gh-pages": "npm run build:gh-pages && npm run patch:gh-pages-paths && angular-cli-ghpages --dir=dist/ai-audiovisual-engine/browser",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
