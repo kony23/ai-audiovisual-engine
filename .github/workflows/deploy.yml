@@ -31,7 +31,10 @@ jobs:
         run: npm run test -- --watch=false --coverage
 
       - name: Build
-        run: npm run build -- --configuration production
+        run: npm run build:gh-pages
+
+      - name: Patch shader paths for GitHub Pages
+        run: npm run patch:gh-pages-paths
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
